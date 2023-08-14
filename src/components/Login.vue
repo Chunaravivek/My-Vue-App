@@ -1,49 +1,67 @@
 <template>
     <div class="login-container">
         <h2>Login</h2>
-        <form @submit.prevent="login">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input v-model="credentials.email" type="text" id="email" />
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input v-model="credentials.password" type="password" id="password" />
-            </div>
-            <button type="submit">Login</button>
-        </form>
+        <div
+        v-if="isInvalid"
+        class="error-message"
+        >
+        {{ errorMessage }}
     </div>
+    <form @submit.prevent="submitForm">
+        <div :class="{ 'form-group': true, 'has-error': isInvalid }">
+            <label for="email">Email</label>
+            <input
+            id="email"
+            v-model="email"
+            type="text"
+            />
+        </div>
+        <div :class="{ 'form-group': true, 'has-error': isInvalid }">
+            <label for="password">Password</label>
+            <input
+            id="password"
+            v-model="password"
+            type="password"
+            />
+        </div>
+        <button type="submit">
+            Login
+        </button>
+    </form>
+</div>
 </template>
 
 <script>
+import { ref } from 'vue';
+import { useStore } from 'vuex';
+
 export default {
-    name: 'App',
-    data() {
-        return {
-            credentials: {
-                email: '',
-                password: '',
-            },
-        };
-    },
-    methods: {
-        async login() {
+    setup() {
+        const store = useStore();
+        
+        const email = ref('');
+        const password = ref('');
+        const isInvalid = ref(false);
+        const errorMessage = ref('');
+        
+        const submitForm = async () => {
             try {
-                const response = await this.$axios.post('http://localhost:3000/v1/admin/login', this.credentials);
-                // Handle success response, such as setting user data in Vuex or local storage
-                console.log(response);
+                await store.dispatch('login', { email: email.value, password: password.value });
+                isInvalid.value = false;
             } catch (error) {
-                // Handle error response, such as displaying an error message
                 console.error(error);
-                console.error(error.response.data.message);
-                console.error(error.message);
+                isInvalid.value = true; // Set isInvalid to true on invalid response
+                errorMessage.value = error.message; // Set error message to display
+                // Display error message or take appropriate action
             }
-        },
+        };
+        
+        return { email, password, isInvalid, errorMessage, submitForm };
     },
 };
 </script>
 
-<style scoped>
+<style>
 .login-container {
     max-width: 300px;
     margin: 0 auto;
@@ -54,19 +72,31 @@ export default {
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
-label {
+.has-error input {
+    border-color: #ff0000; /* Set red border color */
+}
+
+.error-message {
+    color: #ff0000;
+    margin-top: 10px;
+}
+
+label, input {
     display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
 
-input {
+button {
+    display: block;
     width: 100%;
     padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 </style>
